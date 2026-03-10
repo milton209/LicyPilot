@@ -1,0 +1,50 @@
+########################
+# Arquivos de build Java
+########################
+/backend-java/target/
+*.class
+*.log
+
+########################
+# Maven / Wrapper
+########################
+.mvn/
+mvnw*
+
+########################
+# Python
+########################
+/ai-python/__pycache__/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+########################
+# IDEs / Editor
+########################
+.idea/
+.vscode/
+*.iml
+
+########################
+# Sistema operacional
+########################
+.DS_Store
+Thumbs.db
+
+########################
+# Arquivos temporários
+########################
+*.tmp
+*.swp
+*.swo
+
+########################
+# Outros
+########################
+/backend-java/erro_log.txt
