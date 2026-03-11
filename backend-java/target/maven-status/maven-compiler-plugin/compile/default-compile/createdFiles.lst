@@ -2,6 +2,8 @@ com\licypilot\backend\dto\MasterJsonRecord$HabilitacaoRecord.class
 com\licypilot\backend\dto\MasterJsonRecord.class
 com\licypilot\backend\controller\AnaliseUsuarioController.class
 com\licypilot\backend\controller\LicitacaoController.class
+com\licypilot\backend\Fase7RealRunner.class
+com\licypilot\backend\service\DiagnosticoMatchService.class
 com\licypilot\backend\dto\ExtractionResponseDTO.class
 com\licypilot\backend\dto\MasterJsonRecord$RiscoRecord.class
 com\licypilot\backend\repository\EmpresaRepository.class
@@ -10,14 +12,18 @@ com\licypilot\backend\model\Licitacao$LicitacaoBuilder.class
 com\licypilot\backend\service\LicitacaoService.class
 com\licypilot\backend\repository\LicitacaoRepository.class
 com\licypilot\backend\model\StatusViabilidade.class
+com\licypilot\backend\util\TestDataProvider.class
 com\licypilot\backend\dto\MasterJsonRecord$RegrasDisputaRecord.class
 com\licypilot\backend\model\Licitacao.class
 com\licypilot\backend\service\MasterJsonMerger.class
+com\licypilot\backend\dto\DiagnosticoBlocoDTO.class
 com\licypilot\backend\model\StatusProcessamento.class
 com\licypilot\backend\model\Empresa.class
 com\licypilot\backend\BackendApplication.class
+com\licypilot\backend\Fase6Runner.class
 com\licypilot\backend\dto\MasterJsonRecord$PrazosPagamentoRecord.class
 com\licypilot\backend\model\AnaliseUsuario.class
+com\licypilot\backend\Fase7RealRunner$CustomMultipartFile.class
 com\licypilot\backend\service\PythonClient.class
 com\licypilot\backend\controller\EmpresaController.class
 com\licypilot\backend\repository\AnaliseUsuarioRepository.class

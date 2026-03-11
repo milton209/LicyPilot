@@ -68,7 +68,7 @@ def clean_text(text: str) -> str:
     return "\n".join(cleaned_lines)
 
 @app.post("/extract", response_model=ExtractionResponse)
-async def extract_pdf(file: UploadFile = File(...)):
+async def extract_pdf(file: UploadFile = File(...), max_pages: Optional[int] = None):
     """
     Endpoint principal para extrair texto de PDFs de licitação.
     """
@@ -81,9 +81,15 @@ async def extract_pdf(file: UploadFile = File(...)):
     
     try:
         with pdfplumber.open(io.BytesIO(content)) as pdf:
-            logger.info(f"Processando PDF: {file.filename} com {len(pdf.pages)} páginas.")
+            total_pages = len(pdf.pages)
+            pages_to_process = total_pages
+            if max_pages and max_pages > 0:
+                pages_to_process = min(max_pages, total_pages)
+                
+            logger.info(f"Processando PDF: {file.filename}. Total: {total_pages} páginas. Processando: {pages_to_process} páginas.")
             
-            for i, page in enumerate(pdf.pages):
+            for i in range(pages_to_process):
+                page = pdf.pages[i]
                 text = page.extract_text()
                 
                 # Regra 7A.2: Se o texto extraído for muito curto, identifica como imagem (OCR necessário)

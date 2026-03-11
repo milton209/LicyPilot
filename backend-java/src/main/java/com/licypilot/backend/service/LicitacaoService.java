@@ -15,7 +15,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class LicitacaoService {
@@ -42,108 +45,134 @@ public class LicitacaoService {
         this.objectMapper = objectMapper;
     }
 
-    public Licitacao importarLicitacao(MultipartFile arquivo) {
-        log.info("Recebendo arquivo: {}", arquivo.getOriginalFilename());
-        
-        Licitacao licitacao = Licitacao.builder()
-                .numeroEdital("PROCESSANDO...")
-                .statusProcessamento(StatusProcessamento.PROCESSANDO)
-                .arquivoUrl(arquivo.getOriginalFilename())
-                .build();
-        
-        licitacao = licitacaoRepository.save(licitacao);
-        
-        // Inicia o processamento pesado em background
-        processarLicitacaoAsync(licitacao, arquivo);
-        
-        return licitacao;
-    }
-
     public List<Licitacao> listarTodas() {
         return licitacaoRepository.findAll();
     }
 
-    @Async
-    public void processarLicitacaoAsync(Licitacao licitacao, MultipartFile arquivo) {
+    public Optional<Licitacao> buscarPorId(java.util.UUID id) {
+        return licitacaoRepository.findById(id);
+    }
+
+    public Licitacao importarLicitacao(MultipartFile arquivo, Integer maxPages, boolean reprocessar) {
         try {
-            log.info("Iniciando extração Python para licitação ID: {}", licitacao.getId());
-            ExtractionResponseDTO extração = pythonClient.extrairTexto(arquivo.getResource());
+            byte[] conteudo = arquivo.getBytes();
+            String hash = gerarHash(conteudo);
+
+            log.info("Recebendo arquivo: {}. Hash: {}. Reprocessar: {}", arquivo.getOriginalFilename(), hash, reprocessar);
+
+            Optional<Licitacao> existente = licitacaoRepository.findByArquivoHash(hash);
+            if (existente.isPresent()) {
+                if (reprocessar) {
+                    log.info("Forçando reprocessamento de edital existente...");
+                    Licitacao lic = existente.get();
+                    lic.setStatusProcessamento(StatusProcessamento.PROCESSANDO);
+                    lic.setMasterJson(null);
+                    lic.setObservacoesErro(null);
+                    lic = licitacaoRepository.save(lic);
+                    processarLicitacaoAsync(lic, arquivo, maxPages);
+                    return lic;
+                }
+                log.warn("Edital duplicado detectado. Retornando existente.");
+                return existente.get();
+            }
+
+            Licitacao licitacao = Licitacao.builder()
+                    .numeroEdital("PROCESSANDO...")
+                    .statusProcessamento(StatusProcessamento.PROCESSANDO)
+                    .arquivoUrl(arquivo.getOriginalFilename())
+                    .arquivoConteudo(conteudo)
+                    .arquivoHash(hash)
+                    .build();
             
-            MasterJsonRecord acumulador = null;
-            BeanOutputConverter<MasterJsonRecord> converter = new BeanOutputConverter<>(MasterJsonRecord.class);
+            licitacao = licitacaoRepository.save(licitacao);
+            processarLicitacaoAsync(licitacao, arquivo, maxPages);
+            
+            return licitacao;
+        } catch (Exception e) {
+            log.error("Erro ao importar: ", e);
+            throw new RuntimeException("Falha no upload: " + e.getMessage());
+        }
+    }
 
+    private String gerarHash(byte[] conteudo) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(conteudo);
+        return HexFormat.of().formatHex(encodedhash);
+    }
+
+    @Async
+    public void processarLicitacaoAsync(Licitacao licitacao, MultipartFile arquivo, Integer maxPages) {
+        try {
+            log.info("Iniciando extração sequencial para ID: {}", licitacao.getId());
+            ExtractionResponseDTO extração = pythonClient.extrairTexto(arquivo.getResource(), maxPages);
             List<ExtractionResponseDTO.SectionSegmentDTO> segmentos = extração.segments();
-            log.info("Iniciando processamento de {} segmentos do PDF...", segmentos.size());
+            
+            MasterJsonRecord acumuladorGlobal = null;
+            BeanOutputConverter<MasterJsonRecord> converter = new BeanOutputConverter<>(MasterJsonRecord.class);
+            String contextoAnterior = "";
 
-            for (int i = 0; i < segmentos.size(); i++) {
-                ExtractionResponseDTO.SectionSegmentDTO segmento = segmentos.get(i);
-                log.info("Processando Bloco {}/{} (Página {}) via IA...", i + 1, segmentos.size(), segmento.pagina_inicio());
+            for (ExtractionResponseDTO.SectionSegmentDTO segmento : segmentos) {
+                log.info("Processando página {} de {}...", segmento.pagina_inicio(), segmentos.size());
+                
+                String instrucoes = "Você é um especialista em licitações. Extraia os dados da página abaixo em JSON PURO.\n";
+                if (!contextoAnterior.isEmpty()) {
+                    instrucoes += "CONTEXTO DA PÁGINA ANTERIOR (resumo): " + contextoAnterior + "\n\n";
+                }
+                instrucoes += "TEXTO DA PÁGINA ATUAL:\n" + segmento.texto_limpo() + "\n\n" +
+                             "RETORNE APENAS O JSON NO ESQUEMA: " + converter.getFormat();
 
-                try {
-                    String instrucoes = "Você é um especialista em licitações brasileiras. Sua tarefa é extrair informações estruturadas do texto de um edital fornecido.\n\n" +
-                            "REGRAS CRÍTICAS:\n" +
-                            "1. Use APENAS as informações presentes no texto abaixo.\n" +
-                            "2. Se não encontrar uma informação, retorne null para aquele campo.\n" +
-                            "3. Extraia valores financeiros (R$) estritamente como números Double.\n" +
-                            "4. Extraia prazos estritamente como números Inteiros.\n" +
-                            "5. Capture o 'trecho_original' exato para comprovar cada exigência de habilitação ou risco.\n" +
-                            "6. RETORNE APENAS O JSON PURO. NÃO ESCREVA NADA ANTES OU DEPOIS DO JSON.\n\n" +
-                            "TEXTO DO EDITAL (Página " + segmento.pagina_inicio() + "):\n" +
-                            segmento.texto_limpo() + "\n\n" +
-                            "O formato de saída DEVE ser um JSON seguindo este esquema:\n" +
-                            converter.getFormat();
-
-                    String respostaRaw = chatModel.call(instrucoes);
-                    log.debug("Resposta bruta da IA (Bloco {}): {}", i + 1, respostaRaw);
-                    
-                    String jsonLimpo = extrairJson(respostaRaw);
-                    MasterJsonRecord parcial = converter.convert(jsonLimpo);
-                    
-                    acumulador = masterJsonMerger.merge(acumulador, parcial);
-                } catch (Exception e) {
-                    log.error("Erro ao processar bloco {} (Página {}): {}. Pulando para o próximo.", i + 1, segmento.pagina_inicio(), e.getMessage());
-                    // Continua o loop para os próximos segmentos
+                String respostaRaw = chatModel.call(instrucoes);
+                MasterJsonRecord parcial = converter.convert(extrairJson(respostaRaw));
+                
+                // Mescla os dados da página atual com o que já foi extraído
+                acumuladorGlobal = masterJsonMerger.merge(acumuladorGlobal, parcial);
+                
+                // Atualiza contexto para a próxima página (últimos 800 caracteres)
+                contextoAnterior = segmento.texto_limpo();
+                if (contextoAnterior.length() > 800) {
+                    contextoAnterior = contextoAnterior.substring(contextoAnterior.length() - 800);
                 }
             }
 
-            if (acumulador != null) {
-                JsonNode jsonNode = objectMapper.valueToTree(acumulador);
-                licitacao.setMasterJson(jsonNode);
-                
-                if (acumulador.identificacaoProjeto() != null) {
-                    licitacao.setNumeroEdital(acumulador.identificacaoProjeto().numero_edital());
-                    licitacao.setObjeto(acumulador.identificacaoProjeto().objeto_completo());
-                    licitacao.setOrgaoEmissor(acumulador.identificacaoProjeto().orgao_emissor());
+            if (acumuladorGlobal != null) {
+                licitacao.setMasterJson(objectMapper.valueToTree(acumuladorGlobal));
+                if (acumuladorGlobal.identificacaoProjeto() != null) {
+                    licitacao.setNumeroEdital(acumuladorGlobal.identificacaoProjeto().numero_edital());
+                    licitacao.setObjeto(acumuladorGlobal.identificacaoProjeto().objeto_completo());
+                    licitacao.setOrgaoEmissor(acumuladorGlobal.identificacaoProjeto().orgao_emissor());
                 }
-
-                if (acumulador.prazosValoresPagamento() != null) {
-                    licitacao.setValorEstimado(acumulador.prazosValoresPagamento().valor_estimado_total());
+                if (acumuladorGlobal.prazosValoresPagamento() != null) {
+                    licitacao.setValorEstimado(acumuladorGlobal.prazosValoresPagamento().valor_estimado_total());
                 }
             }
             
             licitacao.setStatusProcessamento(StatusProcessamento.CONCLUIDO);
             licitacaoRepository.save(licitacao);
-            log.info("Processamento concluído com sucesso para licitação ID: {}", licitacao.getId());
+            log.info("Extração concluída com sucesso para ID: {}", licitacao.getId());
 
-            // Gatilho de Viabilidade (Fase 4)
             viabilidadeService.processarViabilidadeInicial(licitacao);
 
         } catch (Exception e) {
-            log.error("Erro no processamento assíncrono: ", e);
+            log.error("Erro no processamento sequencial: ", e);
             licitacao.setStatusProcessamento(StatusProcessamento.TIMEOUT_IA);
-            licitacao.setObservacoesErro(e.getMessage() != null ? e.getMessage() : e.toString());
+            licitacao.setObservacoesErro(e.getMessage());
             licitacaoRepository.save(licitacao);
         }
     }
 
     private String extrairJson(String texto) {
         if (texto == null || texto.isBlank()) return "{}";
+        // Remove blocos de markdown se existirem
         String limpo = texto.replaceAll("```json", "").replaceAll("```", "").trim();
+        
+        // Localiza o primeiro '{' e o último '}' para garantir que temos apenas o objeto JSON
         int primeiroBrace = limpo.indexOf("{");
         int ultimoBrace = limpo.lastIndexOf("}");
+        
         if (primeiroBrace >= 0 && ultimoBrace > primeiroBrace) {
             return limpo.substring(primeiroBrace, ultimoBrace + 1);
         }
+        
         return limpo;
     }
 }

@@ -42,12 +42,18 @@ public class Licitacao {
     @Column(name = "arquivo_url")
     private String arquivoUrl;
 
+    @Column(name = "arquivo_conteudo", columnDefinition = "bytea")
+    private byte[] arquivoConteudo;
+
+    @Column(name = "arquivo_hash", unique = true)
+    private String arquivoHash;
+
     @Column(name = "observacoes_erro", columnDefinition = "TEXT")
     private String observacoesErro;
 
     public Licitacao() {}
 
-    public Licitacao(UUID id, String numeroEdital, String orgaoEmissor, String objeto, Double valorEstimado, LocalDateTime dataAbertura, StatusProcessamento statusProcessamento, JsonNode masterJson, String arquivoUrl, String observacoesErro) {
+    public Licitacao(UUID id, String numeroEdital, String orgaoEmissor, String objeto, Double valorEstimado, LocalDateTime dataAbertura, StatusProcessamento statusProcessamento, JsonNode masterJson, String arquivoUrl, byte[] arquivoConteudo, String arquivoHash, String observacoesErro) {
         this.id = id;
         this.numeroEdital = numeroEdital;
         this.orgaoEmissor = orgaoEmissor;
@@ -57,6 +63,8 @@ public class Licitacao {
         this.statusProcessamento = statusProcessamento;
         this.masterJson = masterJson;
         this.arquivoUrl = arquivoUrl;
+        this.arquivoConteudo = arquivoConteudo;
+        this.arquivoHash = arquivoHash;
         this.observacoesErro = observacoesErro;
     }
 
@@ -87,6 +95,12 @@ public class Licitacao {
     public String getArquivoUrl() { return arquivoUrl; }
     public void setArquivoUrl(String arquivoUrl) { this.arquivoUrl = arquivoUrl; }
 
+    public byte[] getArquivoConteudo() { return arquivoConteudo; }
+    public void setArquivoConteudo(byte[] arquivoConteudo) { this.arquivoConteudo = arquivoConteudo; }
+
+    public String getArquivoHash() { return arquivoHash; }
+    public void setArquivoHash(String arquivoHash) { this.arquivoHash = arquivoHash; }
+
     public String getObservacoesErro() { return observacoesErro; }
     public void setObservacoesErro(String observacoesErro) { this.observacoesErro = observacoesErro; }
 
@@ -104,6 +118,8 @@ public class Licitacao {
         private StatusProcessamento statusProcessamento;
         private JsonNode masterJson;
         private String arquivoUrl;
+        private byte[] arquivoConteudo;
+        private String arquivoHash;
         private String observacoesErro;
 
         public LicitacaoBuilder id(UUID id) { this.id = id; return this; }
@@ -115,10 +131,12 @@ public class Licitacao {
         public LicitacaoBuilder statusProcessamento(StatusProcessamento statusProcessamento) { this.statusProcessamento = statusProcessamento; return this; }
         public LicitacaoBuilder masterJson(JsonNode masterJson) { this.masterJson = masterJson; return this; }
         public LicitacaoBuilder arquivoUrl(String arquivoUrl) { this.arquivoUrl = arquivoUrl; return this; }
+        public LicitacaoBuilder arquivoConteudo(byte[] arquivoConteudo) { this.arquivoConteudo = arquivoConteudo; return this; }
+        public LicitacaoBuilder arquivoHash(String arquivoHash) { this.arquivoHash = arquivoHash; return this; }
         public LicitacaoBuilder observacoesErro(String observacoesErro) { this.observacoesErro = observacoesErro; return this; }
 
         public Licitacao build() {
-            return new Licitacao(id, numeroEdital, orgaoEmissor, objeto, valorEstimado, dataAbertura, statusProcessamento, masterJson, arquivoUrl, observacoesErro);
+            return new Licitacao(id, numeroEdital, orgaoEmissor, objeto, valorEstimado, dataAbertura, statusProcessamento, masterJson, arquivoUrl, arquivoConteudo, arquivoHash, observacoesErro);
         }
     }
 }

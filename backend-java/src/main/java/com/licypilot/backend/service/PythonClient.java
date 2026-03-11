@@ -19,13 +19,23 @@ public class PythonClient {
     }
 
     public ExtractionResponseDTO extrairTexto(Resource arquivo) {
+        return extrairTexto(arquivo, null);
+    }
+
+    public ExtractionResponseDTO extrairTexto(Resource arquivo, Integer maxPages) {
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
         bodyBuilder.part("file", arquivo)
                 .filename(arquivo.getFilename())
                 .contentType(MediaType.APPLICATION_PDF);
 
         return restClient.post()
-                .uri("/extract")
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/extract");
+                    if (maxPages != null) {
+                        uriBuilder.queryParam("max_pages", maxPages);
+                    }
+                    return uriBuilder.build();
+                })
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(bodyBuilder.build())
                 .retrieve()

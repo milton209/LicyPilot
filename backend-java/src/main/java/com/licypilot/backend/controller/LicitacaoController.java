@@ -19,11 +19,12 @@ public class LicitacaoController {
     }
 
     @PostMapping("/importar")
-    public ResponseEntity<Licitacao> importar(@RequestParam("arquivo") MultipartFile arquivo) {
-        Licitacao licitacao = licitacaoService.importarLicitacao(arquivo);
+    public ResponseEntity<Licitacao> importar(@RequestParam("arquivo") MultipartFile arquivo,
+                                             @RequestParam(value = "maxPages", required = false) Integer maxPages,
+                                             @RequestParam(value = "reprocessar", defaultValue = "false") boolean reprocessar) {
+        Licitacao licitacao = licitacaoService.importarLicitacao(arquivo, maxPages, reprocessar);
         return ResponseEntity.accepted().body(licitacao);
     }
-
     @GetMapping
     public ResponseEntity<List<Licitacao>> listarTodos() {
         return ResponseEntity.ok(licitacaoService.listarTodas());

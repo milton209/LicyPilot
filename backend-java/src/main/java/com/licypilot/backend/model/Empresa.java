@@ -21,7 +21,7 @@ public class Empresa {
     @Column(name = "capital_social")
     private Double capitalSocial;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "empresa_cnaes", joinColumns = @JoinColumn(name = "empresa_id"))
     @Column(name = "cnae")
     private List<String> cnaes;
