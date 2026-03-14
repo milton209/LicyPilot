@@ -13,7 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -44,7 +44,7 @@ public class LicitacaoControllerTest {
                 .arquivoUrl("edital.pdf")
                 .build();
 
-        when(licitacaoService.importarLicitacao(any(), any())).thenReturn(licitacaoMock);
+        when(licitacaoService.importarLicitacao(any(), any(), anyBoolean())).thenReturn(licitacaoMock);
 
         mockMvc.perform(multipart("/api/v1/licitacoes/importar")
                         .file(arquivo))

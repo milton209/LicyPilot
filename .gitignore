@@ -4,6 +4,7 @@
 /backend-java/target/
 *.class
 *.log
+java_logs.txt
 
 ########################
 # Maven / Wrapper
@@ -43,6 +44,19 @@ Thumbs.db
 *.tmp
 *.swp
 *.swo
+
+########################
+# Arquivos de Teste / Anotações (Pedido do Usuário)
+########################
+anotações.txt
+empresa_teste.json
+teste_extracao.json
+*.txt
+!CLAUDE.md
+!ARCH_DECISIONS.md
+!GEMINI.md
+!README.md
+!backend-java/pom.xml
 
 ########################
 # Outros
