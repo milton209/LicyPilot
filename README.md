@@ -71,7 +71,7 @@ A utilização de **PostgreSQL com JSONB** permite que a aplicação armazene a 
 ---
 
 ## 🗺️ Roadmap de Evolução
-- [ ] **Fase 7:** Implementação de OCR para PDFs escaneados (Imagens).
+- [x] **Fase 7:** Implementação de OCR para PDFs escaneados (Imagens).
 - [ ] **Fase 8:** Integração direta com APIs do PNCP (Portal Nacional de Contratações Públicas).
 - [ ] **Fase 9:** Dashboard de análise de riscos contratuais e penalidades.
 

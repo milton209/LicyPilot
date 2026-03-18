@@ -197,27 +197,22 @@ Gatilho de Viabilidade: Imediatamente após salvar, o Java cruza via código (se
 
 Selo de Oportunidade: Cria registros na tabela AnaliseUsuario marcando o statusViabilidade inicial (ex: INCOMPATIVEL se o capital for muito baixo), poupando processamento futuro.
 
-Fase 5: O Diagnóstico de Match (A Inteligência Quente)
+Fase 5: O Diagnóstico de Match (Migração para Nuvem/OpenAI)
+[ESTRATÉGIA ATUAL]: O Master JSON é gerado localmente (Ollama) para economia. A OpenAI (GPT-4o) será usada apenas no Match Final entre Empresa e Licitação.
 
-Serviço Sob Demanda: Criar o DiagnosticoService. Este serviço é ativado quando o usuário quer ver os detalhes de uma licitação.
+- **Concorrência:** O sistema já utiliza `CompletableFuture` para disparar 4 análises simultâneas (Habilitação, Técnica, Financeira, Riscos).
+- **Consumo:** O fatiamento por blocos do JSON garante baixo custo de tokens.
+- **Integração:** Substituir o `ChatModel` local pelo `OpenAiChatModel` no Spring AI.
 
-Verificação de Cache: O serviço olha se a tabela AnaliseUsuario já tem o diagnosticoJson preenchido. Se sim, retorna do banco.
+Fase 6: Protótipo Frontend e Streaming (UX Viva)
+- **Tecnologia:** React (TypeScript) + Vanilla CSS.
+- **Streaming de Resposta:** Implementar **Server-Sent Events (SSE)**. O usuário verá o diagnóstico sendo "digitado" pela IA em tempo real.
+- **Dashboard:** Visualização do "Selo de Viabilidade" (Match) e histórico de editais.
 
-Análise Gradual da IA: Se não tiver, o Java busca o perfil da Empresa, pega o Master JSON e envia para a IA em blocos:
+Fase 7: Integração com API do PNCP (O Radar)
+- **PNCP:** Implementar buscador automático de editais via API oficial do Governo.
+- **Ingestão:** O sistema baixa o PDF, o Python extrai o texto, o Ollama gera o Master JSON e a OpenAI faz o Match Final.
 
-Prompt 1: "Compare a documentação do usuário X com a seção de habilitação jurídica do Edital Y. Retorne o status (OK, ALERTA, PENDENCIA) para cada exigência."
-
-Prompt 2: "Faça o mesmo para a capacitação técnica."
-
-Persistência do Diagnóstico: Salva o JSON final resultante na coluna diagnosticoJson da tabela AnaliseUsuario para acesso instantâneo futuro.
-
-Fase 6: Interface de Teste (CLI)
-
-Criar um CommandLineRunner simples no Java para testar o fluxo localmente.
-
-Ex 1: java -jar app.jar --extrair "C:/editais/edital.pdf"
-
-Ex 2: java -jar app.jar --diagnostico <id_licitacao> <id_empresa>
 
 fase 7. Requisitos Não Funcionais, Defesas e Preocupações Críticas
 [INSTRUÇÃO PARA A CLI]: A arquitetura DEVE prever e mitigar os seguintes gargalos e riscos inerentes ao processamento de LLMs e PDFs governamentais:
