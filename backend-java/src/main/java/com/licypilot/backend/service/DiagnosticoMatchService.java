@@ -81,23 +81,35 @@ public class DiagnosticoMatchService {
 
     private DiagnosticoBlocoDTO analisarBloco(String nomeBloco, JsonNode dadosEdital, Empresa empresa) {
         if (dadosEdital.isMissingNode() || dadosEdital.isEmpty()) {
-            return new DiagnosticoBlocoDTO("SIM", List.of(), "Área sem exigências críticas.", List.of(), "");
+            return new DiagnosticoBlocoDTO("SIM", List.of(), "Área sem exigências críticas.", List.of(), "Tudo certo nesta área.");
         }
 
         BeanOutputConverter<DiagnosticoBlocoDTO> converter = new BeanOutputConverter<>(DiagnosticoBlocoDTO.class);
-        String prompt = String.format(
+        
+        String promptCompleto = String.format(
+            "### REGRAS DE OURO (ESTRITAMENTE OBRIGATÓRIAS) ###\n" +
+            "1. RESPONDA APENAS COM O OBJETO JSON PURO.\n" +
+            "2. NÃO ADICIONE PREÂMBULOS, EXPLICAÇÕES OU TEXTO FORA DO JSON.\n" +
+            "3. USE EXATAMENTE ESTAS CHAVES: \"atende\", \"pendencias\", \"justificativa\", \"trechos_originais\", \"veredito_especialista\".\n" +
+            "4. NUNCA TRADUZA AS CHAVES PARA PORTUGUÊS OU USE LETRAS MAIÚSCULAS NELAS.\n\n" +
+            "### TAREFA DE ANÁLISE ###\n" +
             "Analise tecnicamente o bloco de '%s' para a empresa %s.\n" +
-            "Compare as exigências: %s\n" +
-            "Com os dados da empresa: Capital R$ %s, CNAEs %s.\n" +
-            "Retorne APENAS o JSON no esquema: %s",
+            "Compare as exigências do Edital: %s\n" +
+            "Com os dados da Empresa: Capital R$ %.2f, CNAEs %s.\n\n" +
+            "### FORMATO DE RESPOSTA ESPERADO ###\n" +
+            "%s",
             nomeBloco, empresa.getRazaoSocial(), dadosEdital.toString(), empresa.getCapitalSocial(), String.join(",", empresa.getCnaes()), converter.getFormat()
         );
 
         try {
-            String resposta = chatModel.call(prompt);
-            return converter.convert(extrairJson(resposta));
+            log.info("Enviando bloco '{}' para IA...", nomeBloco);
+            String respostaRaw = chatModel.call(promptCompleto);
+            String jsonLimpo = extrairJson(respostaRaw);
+            log.debug("Resposta JSON limpa da IA para {}: {}", nomeBloco, jsonLimpo);
+            return converter.convert(jsonLimpo);
         } catch (Exception e) {
-            return new DiagnosticoBlocoDTO("ERRO", List.of("Falha na análise"), e.getMessage(), List.of(), "");
+            log.error("Erro ao analisar bloco '{}': {}", nomeBloco, e.getMessage());
+            return new DiagnosticoBlocoDTO("ERRO", List.of("Falha técnica no processamento"), "Ocorreu um erro ao interpretar a resposta da IA.", List.of(), "Erro de processamento.");
         }
     }
 

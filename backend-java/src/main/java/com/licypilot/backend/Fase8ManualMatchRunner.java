@@ -50,8 +50,8 @@ public class Fase8ManualMatchRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info(">>>> INICIANDO FASE 8: TESTE DE MATCH COM JSON MANUAL <<<<");
 
-        // 1. Preparar Empresa
-        Empresa empresa = criarEmpresa("ALTA - LicyTech TI", "11.111.111/0001-11", 1000000.0, List.of("6201-5/00"));
+        // 1. Preparar Empresa (CNPJ novo para teste limpo)
+        Empresa empresa = criarEmpresa("LicyPilot Test Clean", "22.222.222/0002-22", 1000000.0, List.of("6201-5/00"));
 
         // 2. Injetar JSON Master manualmente
         log.info("Lendo JSONmaster.txt para injeção direta...");
@@ -64,8 +64,8 @@ public class Fase8ManualMatchRunner implements CommandLineRunner {
         String jsonContent = Files.readString(masterJsonFile.toPath());
         JsonNode rootNode = objectMapper.readTree(jsonContent);
 
-        // 3. Criar ou atualizar Licitação com o JSON Manual
-        String hash = "manual-match-test-001";
+        // 3. Criar ou atualizar Licitação com o JSON Manual (Hash novo para teste limpo)
+        String hash = "manual-match-test-002";
         Licitacao licitacao = licitacaoRepository.findByArquivoHash(hash).orElseGet(() -> {
             Licitacao newLic = new Licitacao();
             newLic.setArquivoHash(hash);
