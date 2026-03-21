@@ -1,80 +1,69 @@
-# LicyPilot - Motor de Análise de Licitações (MVP)
+# 🚀 LicyPilot - Motor Inteligente de Análise de Licitações (MVP)
 
-O **LicyPilot** é uma plataforma inteligente projetada para transformar editais de licitação complexos (PDFs) em dados estruturados e acionáveis. Utilizando uma arquitetura híbrida de Microserviços e Inteligência Artificial, o sistema automatiza a triagem de oportunidades e o diagnóstico de conformidade (match) entre empresas e editais governamentais.
-
----
-
-## 🚀 Visão Geral e Propósito
-
-A aplicação resolve o problema da densidade e ambiguidade dos editais brasileiros. Através de um fluxo de processamento distribuído, o LicyPilot extrai cláusulas críticas, prazos e valores, permitindo que empresas identifiquem instantaneamente se possuem os requisitos necessários para vencer uma disputa.
+O **LicyPilot** é uma plataforma projetada para transformar editais de licitação complexos (PDFs) em dados estruturados. Utilizando uma arquitetura de Microsserviços e Inteligência Artificial, o sistema automatiza a triagem de oportunidades e emite um diagnóstico de viabilidade entre empresas e contratos.
 
 ---
 
-## 🏗️ Arquitetura e Estratégias Core
+## 🏗️ Estrutura do Projeto
 
-O projeto fundamenta-se em **abordagens** de engenharia de software e IA de ponta:
+O ecossistema é dividido em dois grandes blocos:
+1.  **Backend (Java):** Orquestração de negócio, persistência e interface com IA (Spring AI).
+2.  **Extrator (Python):** Processamento de PDFs e OCR (FastAPI + Pytesseract).
 
-### 1. Estratégia Anti-Omissão (Processamento Granular)
-Diferente de abordagens tradicionais que enviam documentos inteiros para uma LLM, o LicyPilot utiliza a técnica de **Análise Gradual**. O documento é segmentado em blocos lógicos pelo serviço Python e processado sequencialmente pelo Java. Isso evita a perda de contexto e garante que nenhuma cláusula de habilitação ou risco seja ignorada.
-
-### 2. Conceito de "Master JSON"
-O **Master JSON** atua como o contrato de dados e a "fonte da verdade" da aplicação. Ele consolida todas as informações extraídas (identificação, prazos, habilitação técnica e jurídica) em um esquema estritamente tipado (Java Records), facilitando a integração entre o motor de IA e a lógica de negócio.
-
-### 3. Inteligência de Viabilidade Híbrida
-O sistema aplica duas camadas de filtragem:
-- **Lógica Matemática (Fria):** Cruzamento instantâneo de CNAE, capital social e prazos via código Java puro.
-- **Diagnóstico de Match (IA/Quente):** Análise semântica profunda via LLM para validar acervos técnicos e exigências qualitativas.
-
-### 4. Processamento Just-In-Time (On-Demand)
-Para otimização de recursos e redução de custos de tokens, o diagnóstico pesado de IA só é disparado quando o usuário solicita a análise detalhada, mantendo a escalabilidade do sistema.
-
-### 5. Desacoplamento via JSONB
-A utilização de **PostgreSQL com JSONB** permite que a aplicação armazene a variabilidade infinita dos editais sem a necessidade de migrações constantes de esquema, mantendo a performance de consulta.
+### Configurações Atuais
+*   **Banco de Dados:** PostgreSQL rodando na porta **4000**.
+*   **Inteligência Artificial:** Ollama utilizando o modelo **`llama3`**.
+*   **Comunicação:** O Backend Java consome o Extrator Python na porta `8000`.
 
 ---
 
-## 🛠️ Stack Tecnológica
+## ⚙️ Como Executar o Projeto Localmente
 
-| Camada | Tecnologia | Papel |
-| :--- | :--- | :--- |
-| **Backend Principal** | Java 17 / Spring Boot 3.4 | Orquestração de serviços, persistência e lógica de negócio. |
-| **Inteligência Artificial** | Spring AI / Ollama (Llama 3) | Processamento de linguagem natural e extração de dados. |
-| **Serviço de Extração** | Python 3.12 / FastAPI | Limpeza de PDF, segmentação de texto e OCR (fallback). |
-| **Banco de Dados** | PostgreSQL 16 | Armazenamento relacional e documentos JSONB. |
-| **Processamento de PDF** | pdfplumber / Tesseract | Extração de texto e tabelas com alta precisão. |
+### 1. Pré-requisitos
+*   **Java 17** e **Maven** instalados.
+*   **Python 3.12** (ambiente virtual recomendado).
+*   **Tesseract OCR** instalado no Sistema Operacional (necessário para o fallback de imagens).
+*   **Ollama** instalado e com o modelo baixado: `ollama pull llama3`.
+*   **PostgreSQL** ativo na porta **4000**.
 
----
+### 2. Iniciando o Extrator Python
+```bash
+cd ai-python
+# Crie o venv se não houver
+python -m venv venv
+./venv/Scripts/activate
+# Instale as dependências manualmente (FastAPI, uvicorn, pdfplumber, pytesseract, pdf2image)
+python main.py
+```
 
-## 📋 Fluxo de Execução (Pipeline)
+### 3. Iniciando o Backend Java
+O projeto utiliza perfis do Spring para executar fluxos automatizados via `CommandLineRunner`.
 
-1. **Ingestão:** Upload do edital PDF via API REST (Java).
-2. **Segmentação (Python):** O Python limpa o ruído (cabeçalhos/rodapés) e divide o edital em blocos lógicos.
-3. **Extração Gradual (Java + IA):** O Java orquestra chamadas ao LLM para cada bloco, populando o Master JSON.
-4. **Merge & Validação:** A classe `MasterJsonMerger` consolida as extrações parciais em um registro único.
-5. **Selo de Viabilidade:** O sistema gera um indicativo imediato de "Match" com base no perfil da empresa.
-
----
-
-## 🛠️ Como Executar
-
-### Pré-requisitos
-- Banco de Dados PostgreSQL 16 (local)
-- Java 17+
-- Python 3.12+
-- Ollama instalado localmente (modelo `llama3:8b-instruct`)
-
-### Configuração Rápida
-1. **Ollama:** `ollama run llama3:8b-instruct`
-2. **Backend Java:** `cd backend-java && mvn spring-boot:run`
-3. **AI Python:** `cd ai-python && uvicorn main:app --reload`
-
----
-
-## 🗺️ Roadmap de Evolução
-- [x] **Fase 7:** Implementação de OCR para PDFs escaneados (Imagens).
-- [ ] **Fase 8:** Integração direta com APIs do PNCP (Portal Nacional de Contratações Públicas).
-- [ ] **Fase 9:** Dashboard de análise de riscos contratuais e penalidades.
+*   **Perfil `teste` (Mock):** Usa dados em memória para validar o cálculo de match e a IA rapidamente.
+    ```bash
+    mvn spring-boot:run -Dspring-boot.run.profiles=teste
+    ```
+*   **Perfil `manual-match` (JSON):** Ignora o PDF e injeta o arquivo `JSONmaster.txt` diretamente no banco.
+    ```bash
+    mvn spring-boot:run -Dspring-boot.run.profiles=manual-match
+    ```
+*   **Perfil `real` (Completo):** Processa o arquivo físico `EDITAL20263.pdf` localizado na pasta `EditalLicitaçãoTeste`.
+    ```bash
+    mvn spring-boot:run -Dspring-boot.run.profiles=real
+    ```
 
 ---
 
-> **Nota:** Este projeto segue as diretrizes de desenvolvimento registradas em `ARCH_DECISIONS.md`. Qualquer alteração estrutural deve respeitar a estratégia de desacoplamento e análise granular.
+## ⚠️ Observações de Desenvolvimento
+*   **Caminhos de Arquivo:** Os runners utilizam caminhos relativos (ex: `..\\EditalLicitaçãoTeste\\`). Certifique-se de executar o comando de dentro da pasta `backend-java`.
+*   **Banco de Dados:** O perfil `real` executa comandos de alteração de tabela (`ALTER TABLE`) para garantir compatibilidade com o formato de arquivo.
+*   **Git Ignore:** O arquivo `JSONmaster.txt` está ignorado pelo Git. Se precisar dele em outros ambientes, remova a regra `*.txt` do `.gitignore`.
+
+---
+
+## 🗺️ Roadmap e Futuro
+*   [ ] **Fase 10:** Conteinerização total com Docker e Docker Compose (Orquestração de Banco, Python e Java em um clique).
+*   [ ] **Fase 11:** Integração com API do PNCP.
+*   [ ] **Fase 12:** Implementação de Migrations (Flyway) para substituir comandos SQL manuais no código Java.
+
+Desenvolvido com foco na resiliência de dados e em práticas de Clean Code.
