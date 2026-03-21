@@ -57,7 +57,6 @@ O projeto utiliza perfis do Spring para executar fluxos automatizados via `Comma
 ## ⚠️ Observações de Desenvolvimento
 *   **Caminhos de Arquivo:** Os runners utilizam caminhos relativos (ex: `..\\EditalLicitaçãoTeste\\`). Certifique-se de executar o comando de dentro da pasta `backend-java`.
 *   **Banco de Dados:** O perfil `real` executa comandos de alteração de tabela (`ALTER TABLE`) para garantir compatibilidade com o formato de arquivo.
-*   **Git Ignore:** O arquivo `JSONmaster.txt` está ignorado pelo Git. Se precisar dele em outros ambientes, remova a regra `*.txt` do `.gitignore`.
 
 ---
 
