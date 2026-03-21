@@ -1,68 +1,121 @@
-# 🚀 LicyPilot - Motor Inteligente de Análise de Licitações (MVP)
+# LicyPilot - Motor Inteligente de Analise de Licitacoes (MVP)
 
-O **LicyPilot** é uma plataforma projetada para transformar editais de licitação complexos (PDFs) em dados estruturados. Utilizando uma arquitetura de Microsserviços e Inteligência Artificial, o sistema automatiza a triagem de oportunidades e emite um diagnóstico de viabilidade entre empresas e contratos.
+O **LicyPilot** transforma editais em PDF em dados estruturados para apoiar triagem e diagnostico de viabilidade entre empresa e licitacao.
 
----
+Arquitetura atual:
+- `backend-java`: orquestracao, persistencia e integracao com IA (Spring Boot + Spring AI).
+- `ai-python`: extracao de texto/OCR de PDF (FastAPI + pdfplumber + pytesseract).
 
-## 🏗️ Estrutura do Projeto
+## Estrutura
 
-O ecossistema é dividido em dois grandes blocos:
-1.  **Backend (Java):** Orquestração de negócio, persistência e interface com IA (Spring AI).
-2.  **Extrator (Python):** Processamento de PDFs e OCR (FastAPI + Pytesseract).
+```text
+testeClaudeCode/
+  backend-java/
+  ai-python/
+  EditalLicitacaoTeste/
+```
 
-### Configurações Atuais
-*   **Banco de Dados:** PostgreSQL rodando na porta **4000**.
-*   **Inteligência Artificial:** Ollama utilizando o modelo **`llama3`**.
-*   **Comunicação:** O Backend Java consome o Extrator Python na porta `8000`.
+## Stack e Configuracoes Atuais
 
----
+- **Java:** 17
+- **Python:** 3.12
+- **Banco:** PostgreSQL em `localhost:4000` (database `licypilot_db`)
+- **IA local:** Ollama com modelo `llama3`
+- **Backend Java:** porta `8081`
+- **Extrator Python:** porta `8000`
 
-## ⚙️ Como Executar o Projeto Localmente
+Configuracoes principais em:
+- `backend-java/src/main/resources/application.properties`
+- `ai-python/requirements.txt`
 
-### 1. Pré-requisitos
-*   **Java 17** e **Maven** instalados.
-*   **Python 3.12** (ambiente virtual recomendado).
-*   **Tesseract OCR** instalado no Sistema Operacional (necessário para o fallback de imagens).
-*   **Ollama** instalado e com o modelo baixado: `ollama pull llama3`.
-*   **PostgreSQL** ativo na porta **4000**.
+## Pre-requisitos
 
-### 2. Iniciando o Extrator Python
+Antes de rodar, garanta:
+- Java 17 + Maven
+- Python 3.12
+- PostgreSQL ativo na porta `4000`
+- Ollama instalado e modelo baixado:
+
 ```bash
-cd ai-python
-# Crie o venv se não houver
+ollama pull llama3
+```
+
+- Tesseract OCR instalado e no PATH (necessario para fallback OCR)
+
+Validacoes rapidas:
+
+```bash
+java -version
+mvn -v
+python --version
+tesseract --version
+ollama list
+```
+
+## Como executar localmente (ordem recomendada)
+
+> Importante: execute cada bloco no diretorio indicado.
+
+### 1) Subir extrator Python
+
+No diretorio `ai-python`:
+
+```bash
 python -m venv venv
-./venv/Scripts/activate
-# Instale as dependências manualmente (FastAPI, uvicorn, pdfplumber, pytesseract, pdf2image)
+.\venv\Scripts\activate
+pip install -r requirements.txt
 python main.py
 ```
 
-### 3. Iniciando o Backend Java
-O projeto utiliza perfis do Spring para executar fluxos automatizados via `CommandLineRunner`.
+Saida esperada: API FastAPI ativa em `http://localhost:8000`.
 
-*   **Perfil `teste` (Mock):** Usa dados em memória para validar o cálculo de match e a IA rapidamente.
-    ```bash
-    mvn spring-boot:run -Dspring-boot.run.profiles=teste
-    ```
-*   **Perfil `manual-match` (JSON):** Ignora o PDF e injeta o arquivo `JSONmaster.txt` diretamente no banco.
-    ```bash
-    mvn spring-boot:run -Dspring-boot.run.profiles=manual-match
-    ```
-*   **Perfil `real` (Completo):** Processa o arquivo físico `EDITAL20263.pdf` localizado na pasta `EditalLicitaçãoTeste`.
-    ```bash
-    mvn spring-boot:run -Dspring-boot.run.profiles=real
-    ```
+### 2) Subir backend Java (um perfil por vez)
 
----
+No diretorio `backend-java`:
 
-## ⚠️ Observações de Desenvolvimento
-*   **Caminhos de Arquivo:** Os runners utilizam caminhos relativos (ex: `..\\EditalLicitaçãoTeste\\`). Certifique-se de executar o comando de dentro da pasta `backend-java`.
-*   **Banco de Dados:** O perfil `real` executa comandos de alteração de tabela (`ALTER TABLE`) para garantir compatibilidade com o formato de arquivo.
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=teste
+```
 
----
+Perfis disponiveis:
+- `teste`: fluxo mock para validar pipeline e calculo de match.
+- `manual-match`: injeta JSON mestre (`JSONmaster.txt`) sem extracao de PDF.
+- `real`: processa PDF real em `EditalLicitacaoTeste`.
 
-## 🗺️ Roadmap e Futuro
-*   [ ] **Fase 10:** Conteinerização total com Docker e Docker Compose (Orquestração de Banco, Python e Java em um clique).
-*   [ ] **Fase 11:** Integração com API do PNCP.
-*   [ ] **Fase 12:** Implementação de Migrations (Flyway) para substituir comandos SQL manuais no código Java.
+Exemplos:
 
-Desenvolvido com foco na resiliência de dados e em práticas de Clean Code.
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=manual-match
+mvn spring-boot:run -Dspring-boot.run.profiles=real
+```
+
+## Criterios de sucesso por perfil
+
+- **`teste`**: logs sem erro e persistencia de entidades de teste.
+- **`manual-match`**: JSON mestre salvo no banco e analise inicial gerada.
+- **`real`**: PDF lido, extracao por blocos concluida e `masterJson` persistido.
+
+Se houver falha, validar:
+- PostgreSQL ativo e acessivel.
+- Ollama rodando com `llama3`.
+- API Python em `http://localhost:8000`.
+
+## Observacoes importantes
+
+- Os runners usam caminhos relativos. Para evitar erro de arquivo nao encontrado, rode comandos Java a partir de `backend-java`.
+- O fallback OCR depende do Tesseract corretamente instalado.
+- O arquivo `JSONmaster.txt` pode estar ignorado no Git (`*.txt` no `.gitignore`).
+- O perfil `real` pode executar ajustes de esquema em banco durante testes locais.
+
+## Troubleshooting rapido
+
+- **Erro ao conectar no banco:** confirme porta `4000` e credenciais no `application.properties`.
+- **Erro de modelo IA:** rode `ollama list` e confirme `llama3`.
+- **OCR nao funciona:** confirme `tesseract --version` e PATH do sistema.
+- **Falha de import de Python:** recrie venv e rode `pip install -r requirements.txt`.
+
+## Roadmap
+
+- [ ] Conteinerizacao com Docker e Docker Compose
+- [ ] Integracao com API do PNCP
+- [ ] Migracoes com Flyway (substituir SQL manual em runtime)
