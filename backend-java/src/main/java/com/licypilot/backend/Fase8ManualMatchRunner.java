@@ -8,6 +8,7 @@ import com.licypilot.backend.repository.EmpresaRepository;
 import com.licypilot.backend.repository.LicitacaoRepository;
 import com.licypilot.backend.service.DiagnosticoMatchService;
 import com.licypilot.backend.service.ViabilidadeService;
+import com.licypilot.backend.util.LogPadrao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -57,7 +58,7 @@ public class Fase8ManualMatchRunner implements CommandLineRunner {
         log.info("Lendo JSONmaster.txt para injeção direta...");
         File masterJsonFile = new File("..\\EditalLicitaçãoTeste\\JSONmaster.txt");
         if (!masterJsonFile.exists()) {
-            log.error("Arquivo JSONmaster.txt não encontrado em: {}", masterJsonFile.getAbsolutePath());
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ARQUIVO_NAO_ENCONTRADO, "Fase8ManualMatchRunner.run", "caminho", masterJsonFile.getAbsolutePath(), "Arquivo JSONmaster.txt não encontrado");
             return;
         }
 

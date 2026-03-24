@@ -7,6 +7,7 @@ import com.licypilot.backend.repository.LicitacaoRepository;
 import com.licypilot.backend.service.DiagnosticoMatchService;
 import com.licypilot.backend.service.LicitacaoService;
 import com.licypilot.backend.service.ViabilidadeService;
+import com.licypilot.backend.util.LogPadrao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -75,13 +76,16 @@ public class Fase7RealRunner implements CommandLineRunner {
         try {
             jdbcTemplate.execute("ALTER TABLE licitacoes RENAME COLUMN arquivo_conteudo TO arquivo_conteudo_old");
             jdbcTemplate.execute("ALTER TABLE licitacoes ADD COLUMN arquivo_conteudo bytea");
-        } catch (Exception e) { /* Já atualizado */ }
+            log.info("Ajuste de esquema aplicado: coluna arquivo_conteudo convertida para bytea.");
+        } catch (Exception e) {
+            log.info("evento={} origem={} resumo={}", LogPadrao.EVENTO_ESQUEMA_NAO_APLICADO, "Fase7RealRunner.run", e.getMessage());
+        }
 
         Empresa empresaAlta = criarEmpresa("ALTA - LicyTech TI", "11.111.111/0001-11", 1000000.0, List.of("6201-5/00"));
         
         File editalFile = new File("..\\EditalLicitaçãoTeste\\EDITAL20263.pdf");
         if (!editalFile.exists()) {
-            log.error("Arquivo de edital não encontrado!");
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ARQUIVO_NAO_ENCONTRADO, "Fase7RealRunner.run", "caminho", editalFile.getAbsolutePath(), "Arquivo de edital não encontrado");
             return;
         }
 

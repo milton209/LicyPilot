@@ -30,14 +30,11 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
         </dependency>
-        ----------------------------------------------------
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-ai-inference</artifactId>
             <version>1.0.0-beta.1</version>
         </dependency>
-        ----------------------------------------------------
-
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

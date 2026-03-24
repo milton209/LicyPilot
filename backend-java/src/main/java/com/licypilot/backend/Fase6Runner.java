@@ -8,6 +8,7 @@ import com.licypilot.backend.repository.EmpresaRepository;
 import com.licypilot.backend.repository.LicitacaoRepository;
 import com.licypilot.backend.service.DiagnosticoMatchService;
 import com.licypilot.backend.service.ViabilidadeService;
+import com.licypilot.backend.util.LogPadrao;
 import com.licypilot.backend.util.TestDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +94,7 @@ public class Fase6Runner implements CommandLineRunner {
                 log.info("[TESTE] RESULTADO DA IA:\n{}", resultado.getDiagnosticoJson().toPrettyString());
             }
         } catch (Exception e) {
-            log.error("[TESTE] ERRO CRÍTICO NO DIAGNÓSTICO: {}", e.getMessage());
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_TESTE_DIAGNOSTICO, "Fase6Runner.executarDiagnosticoIA", "analiseId", analise.getId(), e.getMessage(), e);
         }
     }
 }

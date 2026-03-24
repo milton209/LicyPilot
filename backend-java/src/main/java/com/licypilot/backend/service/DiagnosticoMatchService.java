@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.licypilot.backend.dto.DiagnosticoBlocoDTO;
 import com.licypilot.backend.model.AnaliseUsuario;
 import com.licypilot.backend.model.Empresa;
+import com.licypilot.backend.util.LogPadrao;
 import com.licypilot.backend.repository.AnaliseUsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +109,7 @@ public class DiagnosticoMatchService {
             log.debug("Resposta JSON limpa da IA para {}: {}", nomeBloco, jsonLimpo);
             return converter.convert(jsonLimpo);
         } catch (Exception e) {
-            log.error("Erro ao analisar bloco '{}': {}", nomeBloco, e.getMessage());
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_DIAGNOSTICO_BLOCO, "DiagnosticoMatchService.analisarBloco", "bloco", nomeBloco, e.getMessage(), e);
             return new DiagnosticoBlocoDTO("ERRO", List.of("Falha técnica no processamento"), "Ocorreu um erro ao interpretar a resposta da IA.", List.of(), "Erro de processamento.");
         }
     }
@@ -126,6 +127,7 @@ public class DiagnosticoMatchService {
         try {
             return chatModel.call(prompt);
         } catch (Exception e) {
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_VEREDITO, "DiagnosticoMatchService.gerarVereditoGeral", "empresa", empresa.getRazaoSocial(), e.getMessage(), e);
             return "Não foi possível gerar o veredito automático: " + e.getMessage();
         }
     }

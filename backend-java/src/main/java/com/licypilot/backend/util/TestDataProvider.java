@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.licypilot.backend.model.Empresa;
 import com.licypilot.backend.model.Licitacao;
 import com.licypilot.backend.model.StatusProcessamento;
+import com.licypilot.backend.util.LogPadrao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +18,7 @@ import java.util.UUID;
  */
 public class TestDataProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(TestDataProvider.class);
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static Empresa criarEmpresaExemplo() {
@@ -49,6 +53,7 @@ public class TestDataProvider {
         try {
             licitacao.setMasterJson(mapper.readTree(jsonStr));
         } catch (Exception e) {
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_MOCK_JSON, "TestDataProvider.criarLicitacaoComMasterJson", e.getMessage(), e);
             throw new RuntimeException("Erro ao criar JSON de teste", e);
         }
         return licitacao;

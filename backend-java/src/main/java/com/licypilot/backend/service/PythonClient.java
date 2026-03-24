@@ -1,6 +1,9 @@
 package com.licypilot.backend.service;
 
 import com.licypilot.backend.dto.ExtractionResponseDTO;
+import com.licypilot.backend.util.LogPadrao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -10,6 +13,7 @@ import org.springframework.web.client.RestClient;
 @Service
 public class PythonClient {
 
+    private static final Logger log = LoggerFactory.getLogger(PythonClient.class);
     private final RestClient restClient;
 
     public PythonClient() {
@@ -23,12 +27,16 @@ public class PythonClient {
     }
 
     public ExtractionResponseDTO extrairTexto(Resource arquivo, Integer maxPages) {
+        String nomeArquivo = arquivo != null ? arquivo.getFilename() : "n/a";
+        log.info("Chamando extrator Python: arquivo={} maxPages={}", nomeArquivo, maxPages);
+
         MultipartBodyBuilder bodyBuilder = new MultipartBodyBuilder();
         bodyBuilder.part("file", arquivo)
                 .filename(arquivo.getFilename())
                 .contentType(MediaType.APPLICATION_PDF);
 
-        return restClient.post()
+        try {
+            return restClient.post()
                 .uri(uriBuilder -> {
                     uriBuilder.path("/extract");
                     if (maxPages != null) {
@@ -40,5 +48,9 @@ public class PythonClient {
                 .body(bodyBuilder.build())
                 .retrieve()
                 .body(ExtractionResponseDTO.class);
+        } catch (Exception e) {
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_PYTHON_EXTRATOR, "PythonClient.extrairTexto", "arquivo", nomeArquivo, e.getMessage(), e);
+            throw e;
+        }
     }
 }

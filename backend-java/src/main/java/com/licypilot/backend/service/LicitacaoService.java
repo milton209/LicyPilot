@@ -7,6 +7,7 @@ import com.licypilot.backend.dto.MasterJsonRecord;
 import com.licypilot.backend.model.Licitacao;
 import com.licypilot.backend.model.StatusProcessamento;
 import com.licypilot.backend.repository.LicitacaoRepository;
+import com.licypilot.backend.util.LogPadrao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
@@ -89,7 +90,7 @@ public class LicitacaoService {
             
             return licitacao;
         } catch (Exception e) {
-            log.error("Erro ao importar: ", e);
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_IMPORTACAO, "LicitacaoService.importarLicitacao", "arquivo", arquivo.getOriginalFilename(), e.getMessage(), e);
             throw new RuntimeException("Falha no upload: " + e.getMessage());
         }
     }
@@ -153,9 +154,9 @@ public class LicitacaoService {
             viabilidadeService.processarViabilidadeInicial(licitacao);
 
         } catch (Exception e) {
-            log.error("Erro no processamento sequencial: ", e);
+            String ctx = String.format("licitacaoId=%s arquivo=%s", licitacao.getId(), licitacao.getArquivoUrl());
+            LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_PROCESSAMENTO, "LicitacaoService.processarLicitacaoAsync", ctx, e.getMessage(), e);
             licitacao.setStatusProcessamento(StatusProcessamento.TIMEOUT_IA);
-            licitacao.setObservacoesErro(e.getMessage());
             licitacaoRepository.save(licitacao);
         }
     }
