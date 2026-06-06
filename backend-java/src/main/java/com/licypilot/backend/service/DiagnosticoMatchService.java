@@ -4,16 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.licypilot.backend.dto.DiagnosticoBlocoDTO;
-import com.licypilot.backend.model.AnaliseUsuario;
-import com.licypilot.backend.model.Empresa;
+import com.licypilot.backend.model.*;
 import com.licypilot.backend.util.LogPadrao;
 import com.licypilot.backend.repository.AnaliseUsuarioRepository;
+import com.licypilot.backend.repository.EmpresaRepository;
+import com.licypilot.backend.repository.LicitacaoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +28,34 @@ public class DiagnosticoMatchService {
 
     private static final Logger log = LoggerFactory.getLogger(DiagnosticoMatchService.class);
     private final AnaliseUsuarioRepository analiseUsuarioRepository;
+    private final EmpresaRepository empresaRepository;
+    private final LicitacaoRepository licitacaoRepository;
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
 
-    public DiagnosticoMatchService(AnaliseUsuarioRepository analiseUsuarioRepository, ChatModel chatModel, ObjectMapper objectMapper) {
+    public DiagnosticoMatchService(AnaliseUsuarioRepository analiseUsuarioRepository, 
+                                 EmpresaRepository empresaRepository,
+                                 LicitacaoRepository licitacaoRepository,
+                                 ChatModel chatModel, 
+                                 ObjectMapper objectMapper) {
         this.analiseUsuarioRepository = analiseUsuarioRepository;
+        this.empresaRepository = empresaRepository;
+        this.licitacaoRepository = licitacaoRepository;
         this.chatModel = chatModel;
         this.objectMapper = objectMapper;
+    }
+
+    public AnaliseUsuario criarAnaliseUsuario(UUID licitacaoId, UUID empresaId) {
+        Licitacao licitacao = licitacaoRepository.findById(licitacaoId)
+                .orElseThrow(() -> new RuntimeException("Licitação não encontrada"));
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+
+        AnaliseUsuario analise = new AnaliseUsuario();
+        analise.setLicitacao(licitacao);
+        analise.setEmpresa(empresa);
+        analise.setStatusViabilidade(StatusViabilidade.REVISAO_MANUAL);
+        return analiseUsuarioRepository.save(analise);
     }
 
     public AnaliseUsuario executarDiagnosticoCompleto(UUID analiseId) {
@@ -50,7 +73,6 @@ public class DiagnosticoMatchService {
         ObjectNode diagnosticoFinal = objectMapper.createObjectNode();
         ObjectNode blocosTecnicos = objectMapper.createObjectNode();
 
-        // 1. Analisa as áreas técnicas em paralelo (isso é rápido e não afeta o contexto global)
         List<CompletableFuture<Void>> tarefas = new ArrayList<>();
         tarefas.add(agendarAnaliseBloco(blocosTecnicos, "habilitacao", "Habilitação", masterJson.path("habilitacao_detalhada"), empresa));
         tarefas.add(agendarAnaliseBloco(blocosTecnicos, "qualificacao_tecnica", "Qualificação Técnica", masterJson.path("qualificacao_tecnica_especifica"), empresa));
@@ -59,16 +81,93 @@ public class DiagnosticoMatchService {
 
         CompletableFuture.allOf(tarefas.toArray(new CompletableFuture[0])).join();
 
-        // 2. Adiciona os blocos ao JSON final
         diagnosticoFinal.set("detalhes_por_area", blocosTecnicos);
 
-        // 3. GERA O VEREDITO HUMANIZADO GERAL (Abrangendo tudo)
         log.info("Gerando Veredito Final Humanizado...");
         String vereditoGeral = gerarVereditoGeral(blocosTecnicos, empresa);
         diagnosticoFinal.put("veredito_do_especialista", vereditoGeral);
 
         analise.setDiagnosticoJson(diagnosticoFinal);
         return analiseUsuarioRepository.save(analise);
+    }
+
+    public void executarDiagnosticoSse(UUID analiseId, org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter) {
+        AnaliseUsuario analise = analiseUsuarioRepository.findById(analiseId)
+                .orElseThrow(() -> new RuntimeException("Análise não encontrada"));
+
+        // Marca como processando imediatamente
+        analise.setStatusProcessamento(StatusProcessamento.PROCESSANDO);
+        analiseUsuarioRepository.saveAndFlush(analise);
+
+        JsonNode masterJson = analise.getLicitacao().getMasterJson();
+        if (masterJson == null || masterJson.isEmpty()) {
+            emitter.completeWithError(new RuntimeException("Edital ainda não processado."));
+            return;
+        }
+
+        Empresa empresa = analise.getEmpresa();
+        ObjectNode diagnosticoFinal = objectMapper.createObjectNode();
+        ObjectNode blocosTecnicos = objectMapper.createObjectNode();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                emitter.send("[STATUS:ANALISANDO_BLOCOS]\n\n");
+                
+                List<CompletableFuture<Void>> tarefas = new ArrayList<>();
+                tarefas.add(agendarAnaliseBloco(blocosTecnicos, "habilitacao", "Habilitação", masterJson.path("habilitacao_detalhada"), empresa));
+                tarefas.add(agendarAnaliseBloco(blocosTecnicos, "qualificacao_tecnica", "Qualificação Técnica", masterJson.path("qualificacao_tecnica_especifica"), empresa));
+                tarefas.add(agendarAnaliseBloco(blocosTecnicos, "financeiro", "Financeiro", masterJson.path("prazos_valores_e_pagamento"), empresa));
+                tarefas.add(agendarAnaliseBloco(blocosTecnicos, "regras_e_riscos", "Regras e Riscos", masterJson.path("regras_da_disputa"), empresa));
+
+                CompletableFuture.allOf(tarefas.toArray(new CompletableFuture[0])).join();
+                diagnosticoFinal.set("detalhes_por_area", blocosTecnicos);
+
+                emitter.send("[STATUS:GERANDO_VEREDITO]\n\n");
+
+                String prompt = String.format(
+                    "Você é um consultor sênior em licitações. Com base nas análises técnicas abaixo, dê um veredito humanizado e direto para o dono da empresa %s.\n" +
+                    "Diga se vale a pena participar, quais os riscos reais e dê conselhos práticos.\n" +
+                    "Fale de forma amigável, como um consultor falando com um cliente.\n\n" +
+                    "RESUMO DAS ÁREAS:\n%s\n\n" +
+                    "ESCREVA UM PARÁGRAFO DE PARECER FINAL:",
+                    empresa.getRazaoSocial(), blocosTecnicos.toPrettyString()
+                );
+
+                StringBuilder vereditoCompleto = new StringBuilder();
+                
+                // Consumindo o Flux do Spring AI e enviando para o SseEmitter
+                chatModel.stream(prompt).toStream().forEach(token -> {
+                    try {
+                        if (token != null) {
+                            vereditoCompleto.append(token);
+                            // Enviamos o token exatamente como veio, mas garantimos que não haja cache
+                            emitter.send(token);
+                        }
+                    } catch (Exception e) {
+                        log.error("Erro ao enviar token SSE: {}", e.getMessage());
+                    }
+                });
+
+                // SALVAMENTO FINAL NO BANCO DE DADOS (Persistência)
+                try {
+                    log.info("Persistindo diagnóstico final para análise ID: {}", analiseId);
+                    diagnosticoFinal.put("veredito_do_especialista", vereditoCompleto.toString());
+                    analise.setDiagnosticoJson(diagnosticoFinal);
+                    analise.setStatusProcessamento(StatusProcessamento.CONCLUIDO);
+                    analiseUsuarioRepository.saveAndFlush(analise); // Garante o commit imediato
+                    emitter.complete();
+                } catch (Exception e) {
+                    log.error("Erro ao finalizar e salvar SSE: {}", e.getMessage());
+                    emitter.completeWithError(e);
+                }
+            } catch (Exception e) {
+                log.error("Erro processamento assíncrono SSE: {}", e.getMessage());
+                // Em caso de erro, remove o status de processando
+                analise.setStatusProcessamento(StatusProcessamento.ERRO);
+                analiseUsuarioRepository.saveAndFlush(analise);
+                emitter.completeWithError(e);
+            }
+        });
     }
 
     private CompletableFuture<Void> agendarAnaliseBloco(ObjectNode root, String chaveJson, String nomeAmigavel, JsonNode dadosEdital, Empresa empresa) {
@@ -96,10 +195,23 @@ public class DiagnosticoMatchService {
             "### TAREFA DE ANÁLISE ###\n" +
             "Analise tecnicamente o bloco de '%s' para a empresa %s.\n" +
             "Compare as exigências do Edital: %s\n" +
-            "Com os dados da Empresa: Capital R$ %.2f, CNAEs %s.\n\n" +
+            "Considere os dados da Empresa:\n" +
+            "- Capital R$ %.2f\n" +
+            "- CNAEs/Tags: %s\n" +
+            "- Acervo e Experiência Técnica: %s\n" +
+            "IMPORTANTE: A empresa JÁ POSSUI estes documentos regularizados: %s. Se o edital pedir algum destes, considere como ATENDIDO.\n\n" +
             "### FORMATO DE RESPOSTA ESPERADO ###\n" +
             "%s",
-            nomeBloco, empresa.getRazaoSocial(), dadosEdital.toString(), empresa.getCapitalSocial(), String.join(",", empresa.getCnaes()), converter.getFormat()
+            nomeBloco, empresa.getRazaoSocial(), dadosEdital.toString(), 
+            empresa.getCapitalSocial() != null ? empresa.getCapitalSocial() : 0.0, 
+            empresa.getCnaes() != null ? String.join(",", empresa.getCnaes()) : "N/A",
+            empresa.getExperienciasTecnicas() != null && !empresa.getExperienciasTecnicas().isEmpty() 
+                ? empresa.getExperienciasTecnicas().stream()
+                    .map(e -> String.format("[%s]: %s", e.getEspecialidade(), e.getDetalheExperiencia()))
+                    .reduce((a, b) -> a + " | " + b).get()
+                : "Nenhuma experiência detalhada informada.",
+            empresa.getDocumentosRegulares() != null ? String.join(", ", empresa.getDocumentosRegulares()) : "Nenhum documento informado",
+            converter.getFormat()
         );
 
         try {

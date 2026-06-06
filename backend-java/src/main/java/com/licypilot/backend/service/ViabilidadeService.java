@@ -22,23 +22,9 @@ public class ViabilidadeService {
     }
 
     public void processarViabilidadeInicial(Licitacao licitacao) {
-        log.info("Processando viabilidade inicial para licitação: {}", licitacao.getId());
-        
-        List<Empresa> empresas = empresaRepository.findAll();
-        
-        for (Empresa empresa : empresas) {
-            StatusViabilidade status = calcularStatusInicial(licitacao, empresa);
-            
-            AnaliseUsuario analise = analiseUsuarioRepository.findByLicitacaoAndEmpresa(licitacao, empresa)
-                    .orElse(new AnaliseUsuario());
-            
-            analise.setLicitacao(licitacao);
-            analise.setEmpresa(empresa);
-            analise.setStatusViabilidade(status);
-            
-            analiseUsuarioRepository.save(analise);
-            log.info("Selo de oportunidade gerado para Empresa {}: {}", empresa.getRazaoSocial(), status);
-        }
+        log.info("Extração do Master JSON concluída para edital: {}. Agora ele está disponível para análise dos usuários.", licitacao.getId());
+        // Removido o loop automático que criava análises para todas as empresas.
+        // O usuário agora cria a análise sob demanda no frontend.
     }
 
     private StatusViabilidade calcularStatusInicial(Licitacao licitacao, Empresa empresa) {

@@ -81,7 +81,7 @@ public class Fase7RealRunner implements CommandLineRunner {
             log.info("evento={} origem={} resumo={}", LogPadrao.EVENTO_ESQUEMA_NAO_APLICADO, "Fase7RealRunner.run", e.getMessage());
         }
 
-        Empresa empresaAlta = criarEmpresa("ALTA - LicyTech TI", "11.111.111/0001-11", 1000000.0, List.of("6201-5/00"));
+        Empresa empresaAlta = criarEmpresa("ALTA - LicyTech TI", "11.111.111/0001-11", 1000000.0, "EPP", List.of("6201-5/00"));
         
         File editalFile = new File("..\\EditalLicitaçãoTeste\\EDITAL20263.pdf");
         if (!editalFile.exists()) {
@@ -94,7 +94,7 @@ public class Fase7RealRunner implements CommandLineRunner {
 
         // Agora usamos o 'true' para forçar o reprocessamento e testar o novo código
         log.info("Importando edital com 'reprocessar=true' para teste...");
-        Licitacao licitacao = licitacaoService.importarLicitacao(customFile, 10, true);
+        Licitacao licitacao = licitacaoService.importarLicitacao(customFile, "Edital de Teste", "Órgão Demo", 10, true);
         
         log.info("Aguardando processamento sequencial...");
         int tentativas = 0;
@@ -122,12 +122,13 @@ public class Fase7RealRunner implements CommandLineRunner {
         log.info(">>>> FIM DA FASE 7 <<<<");
     }
 
-    private Empresa criarEmpresa(String nome, String cnpj, Double capital, List<String> cnaes) {
+    private Empresa criarEmpresa(String nome, String cnpj, Double capital, String porte, List<String> cnaes) {
         return empresaRepository.findByCnpj(cnpj).orElseGet(() -> {
             Empresa e = new Empresa();
             e.setRazaoSocial(nome);
             e.setCnpj(cnpj);
             e.setCapitalSocial(capital);
+            e.setPorte(porte);
             e.setCnaes(cnaes);
             return empresaRepository.save(e);
         });

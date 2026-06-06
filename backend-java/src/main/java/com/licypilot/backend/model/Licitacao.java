@@ -35,6 +35,9 @@ public class Licitacao {
     @Column(name = "status_processamento")
     private StatusProcessamento statusProcessamento;
 
+    @Column(name = "titulo")
+    private String titulo;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "master_json", columnDefinition = "jsonb")
     private JsonNode masterJson;
@@ -53,7 +56,7 @@ public class Licitacao {
 
     public Licitacao() {}
 
-    public Licitacao(UUID id, String numeroEdital, String orgaoEmissor, String objeto, Double valorEstimado, LocalDateTime dataAbertura, StatusProcessamento statusProcessamento, JsonNode masterJson, String arquivoUrl, byte[] arquivoConteudo, String arquivoHash, String observacoesErro) {
+    public Licitacao(UUID id, String numeroEdital, String orgaoEmissor, String objeto, Double valorEstimado, LocalDateTime dataAbertura, StatusProcessamento statusProcessamento, String titulo, JsonNode masterJson, String arquivoUrl, byte[] arquivoConteudo, String arquivoHash, String observacoesErro) {
         this.id = id;
         this.numeroEdital = numeroEdital;
         this.orgaoEmissor = orgaoEmissor;
@@ -61,6 +64,7 @@ public class Licitacao {
         this.valorEstimado = valorEstimado;
         this.dataAbertura = dataAbertura;
         this.statusProcessamento = statusProcessamento;
+        this.titulo = titulo;
         this.masterJson = masterJson;
         this.arquivoUrl = arquivoUrl;
         this.arquivoConteudo = arquivoConteudo;
@@ -89,6 +93,9 @@ public class Licitacao {
     public StatusProcessamento getStatusProcessamento() { return statusProcessamento; }
     public void setStatusProcessamento(StatusProcessamento statusProcessamento) { this.statusProcessamento = statusProcessamento; }
 
+    public String getTitulo() { return titulo; }
+    public void setTitulo(String titulo) { this.titulo = titulo; }
+
     public JsonNode getMasterJson() { return masterJson; }
     public void setMasterJson(JsonNode masterJson) { this.masterJson = masterJson; }
 
@@ -116,6 +123,7 @@ public class Licitacao {
         private Double valorEstimado;
         private LocalDateTime dataAbertura;
         private StatusProcessamento statusProcessamento;
+        private String titulo;
         private JsonNode masterJson;
         private String arquivoUrl;
         private byte[] arquivoConteudo;
@@ -129,6 +137,7 @@ public class Licitacao {
         public LicitacaoBuilder valorEstimado(Double valorEstimado) { this.valorEstimado = valorEstimado; return this; }
         public LicitacaoBuilder dataAbertura(LocalDateTime dataAbertura) { this.dataAbertura = dataAbertura; return this; }
         public LicitacaoBuilder statusProcessamento(StatusProcessamento statusProcessamento) { this.statusProcessamento = statusProcessamento; return this; }
+        public LicitacaoBuilder titulo(String titulo) { this.titulo = titulo; return this; }
         public LicitacaoBuilder masterJson(JsonNode masterJson) { this.masterJson = masterJson; return this; }
         public LicitacaoBuilder arquivoUrl(String arquivoUrl) { this.arquivoUrl = arquivoUrl; return this; }
         public LicitacaoBuilder arquivoConteudo(byte[] arquivoConteudo) { this.arquivoConteudo = arquivoConteudo; return this; }
@@ -136,7 +145,7 @@ public class Licitacao {
         public LicitacaoBuilder observacoesErro(String observacoesErro) { this.observacoesErro = observacoesErro; return this; }
 
         public Licitacao build() {
-            return new Licitacao(id, numeroEdital, orgaoEmissor, objeto, valorEstimado, dataAbertura, statusProcessamento, masterJson, arquivoUrl, arquivoConteudo, arquivoHash, observacoesErro);
+            return new Licitacao(id, numeroEdital, orgaoEmissor, objeto, valorEstimado, dataAbertura, statusProcessamento, titulo, masterJson, arquivoUrl, arquivoConteudo, arquivoHash, observacoesErro);
         }
     }
 }

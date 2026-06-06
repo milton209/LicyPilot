@@ -54,7 +54,7 @@ public class LicitacaoService {
         return licitacaoRepository.findById(id);
     }
 
-    public Licitacao importarLicitacao(MultipartFile arquivo, Integer maxPages, boolean reprocessar) {
+    public Licitacao importarLicitacao(MultipartFile arquivo, String titulo, String orgao, Integer maxPages, boolean reprocessar) {
         try {
             byte[] conteudo = arquivo.getBytes();
             String hash = gerarHash(conteudo);
@@ -69,6 +69,8 @@ public class LicitacaoService {
                     lic.setStatusProcessamento(StatusProcessamento.PROCESSANDO);
                     lic.setMasterJson(null);
                     lic.setObservacoesErro(null);
+                    lic.setTitulo(titulo);
+                    lic.setOrgaoEmissor(orgao);
                     lic = licitacaoRepository.save(lic);
                     processarLicitacaoAsync(lic, arquivo, maxPages);
                     return lic;
@@ -77,17 +79,18 @@ public class LicitacaoService {
                 return existente.get();
             }
 
-            Licitacao licitacao = Licitacao.builder()
-                    .numeroEdital("PROCESSANDO...")
-                    .statusProcessamento(StatusProcessamento.PROCESSANDO)
-                    .arquivoUrl(arquivo.getOriginalFilename())
-                    .arquivoConteudo(conteudo)
-                    .arquivoHash(hash)
-                    .build();
-            
+            Licitacao licitacao = new Licitacao();
+            licitacao.setNumeroEdital("PROCESSANDO...");
+            licitacao.setStatusProcessamento(StatusProcessamento.PROCESSANDO);
+            licitacao.setArquivoUrl(arquivo.getOriginalFilename());
+            licitacao.setArquivoConteudo(conteudo);
+            licitacao.setArquivoHash(hash);
+            licitacao.setTitulo(titulo);
+            licitacao.setOrgaoEmissor(orgao);
+
             licitacao = licitacaoRepository.save(licitacao);
             processarLicitacaoAsync(licitacao, arquivo, maxPages);
-            
+
             return licitacao;
         } catch (Exception e) {
             LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_IMPORTACAO, "LicitacaoService.importarLicitacao", "arquivo", arquivo.getOriginalFilename(), e.getMessage(), e);

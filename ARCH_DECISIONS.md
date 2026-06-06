@@ -23,3 +23,13 @@ Este documento registra as premissas de design e a visão de futuro para o motor
 ## 5. Inteligência de Viabilidade Híbrida
 - **Decisão:** Separar "Viabilidade Inicial" (Lógica Matemática/CNAE) de "Diagnóstico de Match" (IA).
 - **Motivação:** Fornecer feedback instantâneo ao usuário (Selo de Viabilidade) enquanto o processamento pesado de IA ocorre em segundo plano ou sob demanda.
+
+## 6. Provedor de IA: GitHub Models (GPT-4o)
+- **Decisão:** Utilização do GPT-4o-mini via infraestrutura do GitHub Models.
+- **Motivação:** Alta performance na interpretação de "juridiquês" brasileiro e excelente custo-benefício em relação a modelos locais para o diagnóstico de match.
+- **Evolução:** Suporte a múltiplos provedores (OpenAI direto, Anthropic ou Ollama) configuráveis por ambiente.
+
+## 7. Persistência de Estado do Diagnóstico
+- **Decisão:** Rastreamento do ciclo de vida da análise via campo `status_processamento`.
+- **Motivação:** UX de continuidade. Garante que o usuário possa sair da aplicação enquanto o processo assíncrono de IA termina a análise no servidor e salva o resultado no banco.
+- **Implementação:** Uso de `saveAndFlush` em tarefas assíncronas para garantir o commit imediato de cada etapa da análise.

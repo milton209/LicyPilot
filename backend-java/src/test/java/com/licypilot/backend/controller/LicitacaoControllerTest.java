@@ -44,7 +44,7 @@ public class LicitacaoControllerTest {
                 .arquivoUrl("edital.pdf")
                 .build();
 
-        when(licitacaoService.importarLicitacao(any(), any(), anyBoolean())).thenReturn(licitacaoMock);
+        when(licitacaoService.importarLicitacao(any(), any(), any(), any(), anyBoolean())).thenReturn(licitacaoMock);
 
         mockMvc.perform(multipart("/api/v1/licitacoes/importar")
                         .file(arquivo))

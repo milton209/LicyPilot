@@ -15,4 +15,5 @@ public interface AnaliseUsuarioRepository extends JpaRepository<AnaliseUsuario, 
     List<AnaliseUsuario> findByLicitacao(Licitacao licitacao);
     List<AnaliseUsuario> findByEmpresa(Empresa empresa);
     Optional<AnaliseUsuario> findByLicitacaoAndEmpresa(Licitacao licitacao, Empresa empresa);
+    Optional<AnaliseUsuario> findByLicitacaoIdAndEmpresaId(UUID licitacaoId, UUID empresaId);
 }

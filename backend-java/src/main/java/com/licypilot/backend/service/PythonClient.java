@@ -44,11 +44,15 @@ public class PythonClient {
                     }
                     return uriBuilder.build();
                 })
+                // ? 
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(bodyBuilder.build())
                 .retrieve()
                 .body(ExtractionResponseDTO.class);
         } catch (Exception e) {
+            //o throw e é para que o erro seja propagado para o controller
+            //o LogPadrao.logErro é um metodo que loga o erro em um arquivo de log que é gerado pelo Spring Boot e é utilizado para monitorar o sistema
+            //o LogPadrao é uma classe que contém constantes para os eventos de log que eu defini no arquivo LogPadrao.java para facilitar a leitura e manutenção do codigo 
             LogPadrao.logErro(log, LogPadrao.EVENTO_ERRO_PYTHON_EXTRATOR, "PythonClient.extrairTexto", "arquivo", nomeArquivo, e.getMessage(), e);
             throw e;
         }

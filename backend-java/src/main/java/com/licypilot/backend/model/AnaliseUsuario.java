@@ -31,6 +31,10 @@ public class AnaliseUsuario {
     @Column(name = "diagnostico_json", columnDefinition = "jsonb")
     private JsonNode diagnosticoJson;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_processamento")
+    private StatusProcessamento statusProcessamento = StatusProcessamento.PENDENTE;
+
     public AnaliseUsuario() {}
 
     public AnaliseUsuario(UUID id, Licitacao licitacao, Empresa empresa, StatusViabilidade statusViabilidade, JsonNode diagnosticoJson) {
@@ -55,4 +59,7 @@ public class AnaliseUsuario {
 
     public JsonNode getDiagnosticoJson() { return diagnosticoJson; }
     public void setDiagnosticoJson(JsonNode diagnosticoJson) { this.diagnosticoJson = diagnosticoJson; }
+
+    public StatusProcessamento getStatusProcessamento() { return statusProcessamento; }
+    public void setStatusProcessamento(StatusProcessamento statusProcessamento) { this.statusProcessamento = statusProcessamento; }
 }

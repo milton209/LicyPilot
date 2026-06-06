@@ -8,14 +8,23 @@ import logging
 from pdf2image import convert_from_bytes
 import pytesseract
 from PIL import Image
+from dotenv import load_dotenv
 
-# Configuração de Logs
-logging.basicConfig(level=logging.INFO)
+# Carrega variaveis de ambiente do arquivo .env (quando existir)
+load_dotenv()
+
+# Configuração de Logs (padrão INFO)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.INFO))
 logger = logging.getLogger(__name__)
 
-# Opcional: Caminho para o executável do tesseract no Windows
-# Se o Tesseract não estiver no PATH, descomente e ajuste a linha abaixo:
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Configuracoes OCR por ambiente
+OCR_LANG = os.getenv("OCR_LANG", "por+eng")
+OCR_TEXT_MIN_LEN = int(os.getenv("OCR_TEXT_MIN_LEN", "50"))
+OCR_VALID_MIN_LEN = int(os.getenv("OCR_VALID_MIN_LEN", "10"))
+TESSERACT_CMD = os.getenv("TESSERACT_CMD")
+if TESSERACT_CMD:
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
 app = FastAPI(title="LicyPilot - AI Python Extractor")
 
@@ -40,8 +49,8 @@ def run_ocr_on_page(page_bytes: bytes, page_number: int) -> str:
         if not images:
             return ""
         
-        # Executa OCR com pytesseract (linguagem português + inglês)
-        text = pytesseract.image_to_string(images[0], lang='por+eng')
+        # Executa OCR com pytesseract (linguagem configurável por env)
+        text = pytesseract.image_to_string(images[0], lang=OCR_LANG)
         return text
     except Exception as e:
         logger.error(f"Erro ao executar OCR na página {page_number}: {str(e)}")
@@ -92,14 +101,14 @@ async def extract_pdf(file: UploadFile = File(...), max_pages: Optional[int] = N
                 page = pdf.pages[i]
                 text = page.extract_text()
                 
-                # Regra 7A.2: Se o texto extraído for muito curto, identifica como imagem (OCR necessário)
-                if not text or len(text.strip()) < 50:
+                # Se o texto extraído for muito curto, identifica como imagem (OCR necessário)
+                if not text or len(text.strip()) < OCR_TEXT_MIN_LEN:
                     logger.info(f"Página {i+1} parece ser imagem. Acionando OCR fallback.")
                     
                     # Passa o número da página (i+1) para o OCR
                     text_ocr = run_ocr_on_page(content, i + 1)
                     
-                    if text_ocr and len(text_ocr.strip()) > 10:
+                    if text_ocr and len(text_ocr.strip()) > OCR_VALID_MIN_LEN:
                         text = text_ocr
                         is_ocr_active = True
                     else:
@@ -129,4 +138,6 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    host = os.getenv("PYTHON_HOST", "0.0.0.0")
+    port = int(os.getenv("PYTHON_PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)

@@ -12,9 +12,11 @@ import java.util.List;
 public class EmpresaController {
 
     private final EmpresaRepository empresaRepository;
+    private final com.licypilot.backend.service.DemonstrationService demonstrationService;
 
-    public EmpresaController(EmpresaRepository empresaRepository) {
+    public EmpresaController(EmpresaRepository empresaRepository, com.licypilot.backend.service.DemonstrationService demonstrationService) {
         this.empresaRepository = empresaRepository;
+        this.demonstrationService = demonstrationService;
     }
 
     @PostMapping
@@ -25,5 +27,27 @@ public class EmpresaController {
     @GetMapping
     public ResponseEntity<List<Empresa>> listar() {
         return ResponseEntity.ok(empresaRepository.findAll());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Empresa> atualizar(@PathVariable java.util.UUID id, @RequestBody Empresa dados) {
+        return empresaRepository.findById(id)
+                .map(empresa -> {
+                    empresa.setRazaoSocial(dados.getRazaoSocial());
+                    empresa.setCnpj(dados.getCnpj());
+                    empresa.setCapitalSocial(dados.getCapitalSocial());
+                    empresa.setPorte(dados.getPorte());
+                    empresa.setCnaes(dados.getCnaes());
+                    empresa.setDocumentosRegulares(dados.getDocumentosRegulares());
+                    empresa.setExperienciasTecnicas(dados.getExperienciasTecnicas());
+                    return ResponseEntity.ok(empresaRepository.save(empresa));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/reset")
+    public ResponseEntity<Void> resetarEmpresas() {
+        demonstrationService.resetFull();
+        return ResponseEntity.noContent().build();
     }
 }

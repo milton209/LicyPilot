@@ -49,17 +49,33 @@ Thumbs.db
 # Arquivos de Teste / Anotações (Pedido do Usuário)
 ########################
 anotações.txt
-empresa_teste.json
 teste_extracao.json
 *.txt
-!CLAUDE.md
+CLAUDE.md
 !ARCH_DECISIONS.md
 !GEMINI.md
 !backend-java/pom.xml
+extract_docs.py
+"extract_habilita\303\247\303\243o.py"
+extract_test.py
+empresa_teste.json
+PLAN_FRONTEND_DETALHADO.md
+frontend-prd.md
+
+########################
+# Pastas Pessoais / Locais
+########################
+"meu portiflio/"
+/experimento-github-models/
 
 ########################
 # Outros
 ########################
 /backend-java/erro_log.txt
-
 .env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
