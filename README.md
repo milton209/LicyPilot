@@ -1,107 +1,122 @@
-# LicyPilot - Motor Inteligente de Análise de Licitações (MVP)
+# LicyPilot - Motor Inteligente de Análise de Licitações (MVP) 🚀
 
-O **LicyPilot** transforma editais em PDF em dados estruturados para apoiar triagem e diagnóstico de viabilidade entre empresa e licitação, utilizando Inteligência Artificial (GPT-4o via GitHub Models).
+O **LicyPilot** é uma solução de alta performance que transforma editais de licitação complexos (em PDF) em dados estruturados para apoiar triagem e diagnóstico de viabilidade técnica entre empresas e certames públicos. Utilizando Inteligência Artificial de última geração e uma arquitetura robusta de micro-serviços, o sistema oferece uma análise profunda e automatizada de editais.
 
-## 🚀 Arquitetura e Estrutura
-
-- `backend-java`: Orquestração, persistência e integração com IA (Spring Boot + Spring AI + GitHub Models).
-- `ai-python`: Extração de texto/OCR de PDF (FastAPI + pdfplumber + Tesseract OCR).
-- `frontend-licypilot`: Interface web moderna (React + TypeScript + Tailwind 4).
-- `EditalLicitacaoTeste`: Pasta contendo PDFs para testes locais.
-
-## ✨ Funcionalidades Principais
-
-- **Extração Inteligente:** Converte PDFs complexos em um "Master JSON" estruturado.
-- **Diagnóstico de Match:** IA analisa se a empresa é **Apta** ou se possui **Pendências** para o edital.
-- **Streaming de Resposta (SSE):** O diagnóstico da IA é exibido em tempo real, com persistência de estado (você pode sair e voltar da página que a análise continua).
-- **Perfil Corporativo Estruturado:** Cadastro de Acervo Técnico (Especialidades) e Documentos Regularizados.
-- **Visualização Side-by-Side:** PDF original lado a lado com a análise estruturada.
-- **Painel Admin:** Ferramentas de reset seletivo (Análises, Editais ou Tudo) para testes e demos.
-
-## 🛠️ Stack Tecnológica
-
-- **Java:** 17
-- **Python:** 3.12
-- **Node.js:** 18+
-- **Banco:** PostgreSQL (padrão porta `4000`)
-- **IA:** GPT-4o-mini (GitHub Models API)
-- **OCR:** Tesseract OCR (necessário para PDFs escaneados)
+Este projeto foi desenvolvido com foco em **escalabilidade**, **UX moderna** e **integração avançada com LLMs**, sendo uma excelente demonstração de competência técnica em engenharia de software fullstack.
 
 ---
 
-## 💻 Guia de Instalação (Setup do Zero)
+## 🚀 Arquitetura e Estrutura do Projeto
 
-Siga estes passos para rodar o projeto em uma nova máquina após o clone.
+O sistema é dividido em três componentes principais que trabalham em harmonia:
+
+- **`backend-java`**: Orquestração central, persistência de dados e integração inteligente com IA utilizando Spring AI.
+- **`ai-python`**: Micro-serviço especializado em extração de dados brutos e OCR de alta precisão.
+- **`frontend-licypilot`**: Interface web reativa e moderna, focada em visualização de dados e experiência do usuário.
+
+---
+
+## 🛠️ Stack Tecnológica de Elite
+
+### **Backend (Orquestração e IA)**
+*   **Java 17 + Spring Boot 3.4.3:** Base sólida e performática para a lógica de negócio empresarial.
+*   **Spring AI (v1.0.0-M6):** Framework de ponta para integração nativa com modelos de IA (GPT-4o via GitHub Models).
+*   **Spring Data JPA:** Abstração de persistência robusta para comunicação com PostgreSQL.
+*   **SSE (Server-Sent Events):** Streaming de dados em tempo real para exibir o diagnóstico da IA conforme ele é gerado.
+*   **Maven:** Gestão profissional de dependências e ciclo de vida de build.
+
+### **AI Python (Extração e OCR)**
+*   **Python 3.12 + FastAPI:** API de alta velocidade para processamento assíncrono de documentos pesados.
+*   **pdfplumber:** Ferramenta cirúrgica para extração de texto e tabelas de documentos PDF.
+*   **Tesseract OCR + pytesseract:** Fallback inteligente com visão computacional para leitura de documentos escaneados.
+*   **Pydantic:** Garantia de integridade de dados na comunicação entre serviços.
+
+### **Frontend (Interface do Usuário)**
+*   **React 19:** A versão mais recente da biblioteca líder de mercado, focada em performance e hooks modernos.
+*   **Vite 8:** Ferramenta de build de última geração para desenvolvimento instantâneo.
+*   **Tailwind CSS 4:** Estilização baseada em utilitários para um design responsivo e visual "Premium".
+*   **TypeScript:** Segurança de tipos e maior manutenibilidade do código da interface.
+*   **Lucide React & Framer Motion:** Ícones modernos e animações fluidas para uma UX superior.
+
+---
+
+## ✨ Funcionalidades Principais
+
+*   **Extração Inteligente:** Converte PDFs complexos em um "Master JSON" estruturado, validando a integridade dos dados.
+*   **Diagnóstico de Match (IA GPT-4o):** Análise automática se a empresa está **Apta** ou possui **Pendências** baseada no edital.
+*   **Streaming de Resposta (SSE):** O diagnóstico da IA é exibido em tempo real, com persistência automática (pode sair e voltar que a análise continua).
+*   **Perfil Corporativo Estruturado:** Cadastro detalhado de Acervo Técnico (Especialidades) e Documentos.
+*   **Visualização Side-by-Side:** O PDF original e a análise estruturada são exibidos lado a lado para fácil conferência.
+*   **Painel Admin Estratégico:** Ferramentas de reset seletivo (Análises, Editais ou Tudo) para testes rápidos e demonstrações.
+
+---
+
+## 💻 Guia de Instalação e Execução
 
 ### 1. Pré-requisitos
-- **Java 17** (JDK) instalado.
-- **Node.js 18+** e npm instalados.
-- **Python 3.12** instalado.
-- **PostgreSQL** rodando (padrão: porta `4000`).
-- **Tesseract OCR** instalado e adicionado ao PATH do sistema.
-- **Ollama** (Opcional - caso queira rodar localmente, altere o `application.properties`).
+*   **Java 17 (JDK)** instalado.
+*   **Node.js 18+** e npm instalados.
+*   **Python 3.12** instalado.
+*   **PostgreSQL** rodando (padrão: porta `4000`).
+*   **Tesseract OCR** instalado e adicionado ao PATH do sistema.
 
-### 2. Configuração do Banco de Dados
-1. Crie um banco de dados chamado `licypilot_db` no seu PostgreSQL.
-2. Certifique-se de que o PostgreSQL está acessível na porta `4000` (ou ajuste no `application.properties` do Java).
+### 2. Configuração de Variáveis de Ambiente
+O backend exige as seguintes variáveis para segurança e integração:
 
-### 3. Configuração de Variáveis de Ambiente
-O backend Java necessita de um Token do GitHub para acessar a IA e da senha do banco de dados:
-- **GITHUB_TOKEN:** Token do GitHub para acessar a API de Modelos.
-- **DB_PASSWORD:** Senha do usuário `postgres` no PostgreSQL.
-
-No Windows:
-```bash
+**Windows:**
+```powershell
 setx GITHUB_TOKEN "seu_token_aqui"
-setx DB_PASSWORD "sua_senha_aqui"
+setx DB_PASSWORD "senha_do_seu_postgres"
 ```
-*(Após rodar o setx, reinicie o terminal).*
-No Linux/Mac:
+*(Reinicie o terminal após configurar).*
+
+**Linux/Mac:**
 ```bash
 export GITHUB_TOKEN="seu_token_aqui"
-export DB_PASSWORD="sua_senha_aqui"
+export DB_PASSWORD="senha_do_seu_postgres"
 ```
 
-### 4. Executando os Serviços
+### 3. Executando os Serviços
 
-#### A) Extrator Python (`ai-python`)
+#### **A) Extrator Python (`ai-python`)**
 ```bash
 cd ai-python
 python -m venv venv
-.\venv\Scripts\activate  # No Windows
-# source venv/bin/activate # No Linux/Mac
+.\venv\Scripts\activate  # Windows
+source venv/bin/activate # Linux/Mac
 pip install -r requirements.txt
 python main.py
 ```
-*O serviço subirá em `http://localhost:8000`*
+*Serviço disponível em: `http://localhost:8000`*
 
-#### B) Backend Java (`backend-java`)
+#### **B) Backend Java (`backend-java`)**
 ```bash
 cd backend-java
 mvn clean install
 mvn spring-boot:run
 ```
-*Para carregar dados iniciais de teste (Empresa/Usuário), use:*
-`mvn spring-boot:run "-Dspring-boot.run.arguments=--fase7"`
-*O serviço subirá em `http://localhost:8081`*
+*Para carregar dados iniciais de teste, use: `mvn spring-boot:run "-Dspring-boot.run.arguments=--fase7"`*
 
-#### C) Frontend React (`frontend-licypilot`)
+#### **C) Frontend React (`frontend-licypilot`)**
 ```bash
 cd frontend-licypilot
 npm install
 npm run dev
 ```
-*Acesse em `http://localhost:5173`*
+*Acesse em: `http://localhost:5173`*
 
 ---
 
 ## 📊 Painel do Administrador
-Acesse a rota `/admin` no navegador para gerenciar o ambiente:
-- **Limpar Análises:** Apaga apenas os resultados da IA.
-- **Resetar Editais:** Apaga editais e análises, mantendo seu Perfil de Empresa.
-- **Reset Total:** Volta o sistema ao estado zero (apaga tudo).
+Acesse a rota `/admin` no navegador para gerenciar o ambiente de testes:
+- **Limpar Análises:** Apaga apenas os resultados gerados pela IA.
+- **Resetar Editais:** Remove editais e análises, preservando o perfil da empresa.
+- **Reset Total:** Restaura o sistema ao estado zero.
 
 ## 📝 Observações Técnicas
-- **CORS:** O backend está configurado para aceitar requisições de `http://localhost:5173`.
-- **Master JSON:** O sistema valida a integridade da extração antes de liberar o Match.
-- **Persistence:** Se você fechar a aba durante uma análise, ela continuará sendo processada no servidor. Ao voltar, o sistema retomará o progresso automaticamente.
+- **CORS:** Backend configurado para aceitar requisições do frontend em `localhost:5173`.
+- **Master JSON:** Validação rigorosa de integridade antes da liberação do Match pela IA.
+- **Persistência:** Processamento assíncrono no servidor garante que análises não sejam perdidas se a aba for fechada.
+
+---
+*Este projeto demonstra competência em engenharia de software fullstack, integração avançada de IA e design de sistemas modernos e escaláveis.*
