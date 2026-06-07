@@ -46,10 +46,21 @@ Siga estes passos para rodar o projeto em uma nova máquina após o clone.
 2. Certifique-se de que o PostgreSQL está acessível na porta `4000` (ou ajuste no `application.properties` do Java).
 
 ### 3. Configuração de Variáveis de Ambiente
-O backend Java necessita de um Token do GitHub para acessar a IA:
-- No Windows: `setx GITHUB_TOKEN "seu_token_aqui"`
-- No Linux/Mac: `export GITHUB_TOKEN="seu_token_aqui"`
-*(Ou configure diretamente no `application.properties` para testes rápidos).*
+O backend Java necessita de um Token do GitHub para acessar a IA e da senha do banco de dados:
+- **GITHUB_TOKEN:** Token do GitHub para acessar a API de Modelos.
+- **DB_PASSWORD:** Senha do usuário `postgres` no PostgreSQL.
+
+No Windows:
+```bash
+setx GITHUB_TOKEN "seu_token_aqui"
+setx DB_PASSWORD "sua_senha_aqui"
+```
+*(Após rodar o setx, reinicie o terminal).*
+No Linux/Mac:
+```bash
+export GITHUB_TOKEN="seu_token_aqui"
+export DB_PASSWORD="sua_senha_aqui"
+```
 
 ### 4. Executando os Serviços
 
